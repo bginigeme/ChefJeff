@@ -3,15 +3,16 @@
     display: flex;
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically if needed */
-    padding: 20px;
+    padding: 10px;
     background-color: #f4c27a; /* Optional: Add a background color */
   }
   
   /* Logo styling */
   .logo {
-    width: 100px; /* Set desired width */
-    height: auto; /* Maintain aspect ratio */
-    object-fit: contain; /* Ensure it fits within its box */
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    padding: 10px;
   }
   
 
