@@ -73,20 +73,23 @@ def get_preferences():
 def get_recipes():
     try:
         tags = request.args.get('tags', '')
+        page = int(request.args.get('page', 1))
+        per_page = 6
         
-        # Add cuisine type for certain categories
         if tags.lower() in ['asian', 'nigerian', 'southern']:
             params = {
                 'apiKey': SPOONACULAR_API_KEY,
-                'number': 6,
+                'number': per_page * 2,  # Fetch more to allow pagination
+                'offset': (page - 1) * per_page,
                 'cuisine': tags,
-                'addRecipeInformation': True  # Add this to get full recipe info
+                'addRecipeInformation': True
             }
             url = "https://api.spoonacular.com/recipes/complexSearch"
         else:
             params = {
                 'apiKey': SPOONACULAR_API_KEY,
-                'number': 6,
+                'number': per_page * 2,
+                'offset': (page - 1) * per_page,
                 'tags': tags,
                 'type': tags if tags else None
             }
@@ -116,17 +119,27 @@ def get_recipes():
                     for step in instruction.get('steps', []):
                         steps.append(clean_html(step.get('step', '')))
             
+            # Check if video is available
+            video_available = False
+            if recipe.get('videoUrl') or recipe.get('video'):
+                video_available = True
+            
             formatted_recipe = {
                 'id': recipe.get('id'),
                 'title': recipe.get('title'),
                 'description': clean_html(recipe.get('summary', '')).split('.')[0] if recipe.get('summary') else '',
                 'category': tags.capitalize() if tags else 'Main',
                 'image': recipe.get('image'),
-                'steps': steps if steps else ['No detailed steps available.']
+                'steps': steps if steps else ['No detailed steps available.'],
+                'hasVideo': video_available
             }
             formatted_recipes.append(formatted_recipe)
             
-        return jsonify(formatted_recipes)
+        return jsonify({
+            'recipes': formatted_recipes,
+            'currentPage': page,
+            'hasMore': len(formatted_recipes) >= per_page
+        })
         
     except Exception as e:
         print('Error:', str(e))  # Add server-side logging
@@ -176,6 +189,51 @@ def search_recipes():
             formatted_recipes.append(formatted_recipe)
             
         return jsonify(formatted_recipes)
+        
+    except Exception as e:
+        print('Error:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recipes/videos', methods=['GET'])
+def get_recipe_videos():
+    try:
+        recipe_id = request.args.get('recipeId')
+        
+        # First get recipe information including videos
+        params = {
+            'apiKey': SPOONACULAR_API_KEY,
+            'id': recipe_id,
+        }
+        
+        url = f"https://api.spoonacular.com/recipes/{recipe_id}/information"
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        recipe_data = response.json()
+        
+        # Check if there's a video URL in the recipe data
+        video_url = recipe_data.get('videoUrl')
+        
+        if not video_url:
+            # If no direct video, search for related videos
+            search_params = {
+                'apiKey': SPOONACULAR_API_KEY,
+                'query': recipe_data['title'],
+                'number': 1
+            }
+            
+            video_search_url = "https://api.spoonacular.com/food/videos/search"
+            video_response = requests.get(video_search_url, params=search_params)
+            video_response.raise_for_status()
+            videos = video_response.json().get('videos', [])
+            
+            if videos:
+                video_url = f"https://www.youtube.com/watch?v={videos[0]['youTubeId']}"
+            
+        return jsonify({
+            'videoUrl': video_url,
+            'title': recipe_data['title']
+        })
         
     except Exception as e:
         print('Error:', str(e))

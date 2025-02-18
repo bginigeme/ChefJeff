@@ -3,6 +3,7 @@ import './App.css';
 import CategoryList from './components/CategoryList';
 import RecipeList from './components/RecipeList';
 import logo from './assets/ChefJeff.jpg';
+import AddRecipeForm from './components/AddRecipeForm';
 
 
 function App() {
@@ -19,6 +20,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [customRecipes, setCustomRecipes] = useState([]);
 
   const handleInputChange = (field, value) => {
     setUserPreferences(prev => ({
@@ -42,9 +46,11 @@ function App() {
   ];
 
   // Update the filteredRecipes logic
-  const filteredRecipes = selectedCategory === 'All' 
-    ? recipes 
-    : recipes.filter(recipe => recipe.category.toLowerCase() === selectedCategory.toLowerCase());
+  const filteredRecipes = selectedCategory === 'All'
+    ? [...recipes, ...customRecipes]
+    : [...recipes, ...customRecipes].filter(
+        recipe => recipe.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
 
   // Function to handle liking a recipe
   const handleLike = recipe => {
@@ -116,7 +122,7 @@ function App() {
     fetchRecipes(tags);
   }, [selectedCategory]);
 
-  const fetchRecipes = async (tags = '') => {
+  const fetchRecipes = async (tags = '', page = 1) => {
     setLoading(true);
     setError(null);
     try {
@@ -137,11 +143,19 @@ function App() {
       const mappedTag = categoryMapping[tags] || tags;
       console.log('Fetching recipes for tag:', mappedTag);
       
-      const response = await fetch(`http://localhost:5000/api/recipes?tags=${mappedTag}`);
+      const response = await fetch(`http://localhost:5000/api/recipes?tags=${mappedTag}&page=${page}`);
       if (!response.ok) throw new Error('Failed to fetch recipes');
       const data = await response.json();
       console.log('Received recipes:', data);
-      setRecipes(data);
+      
+      if (page === 1) {
+        setRecipes(data.recipes);
+      } else {
+        setRecipes(prev => [...prev, ...data.recipes]);
+      }
+      
+      setCurrentPage(data.currentPage);
+      setHasMore(data.hasMore);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching recipes:', err);
@@ -164,6 +178,14 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    fetchRecipes(selectedCategory, currentPage + 1);
+  };
+
+  const handleAddRecipe = (newRecipe) => {
+    setCustomRecipes(prev => [...prev, newRecipe]);
   };
 
   return (
@@ -192,6 +214,12 @@ function App() {
           onClick={() => setActiveTab('My Recipes')}
         >
           My Recipes
+        </button>
+        <button
+          className={activeTab === 'Add Recipe' ? 'active' : ''}
+          onClick={() => setActiveTab('Add Recipe')}
+        >
+          Add Recipe
         </button>
       </nav>
 
@@ -238,10 +266,13 @@ function App() {
             <div>Error: {error}</div>
           ) : (
             <RecipeList
-              recipes={recipes}
+              recipes={filteredRecipes}
               likedRecipes={likedRecipes}
               onLike={handleLike}
               onUnlike={handleUnlike}
+              onLoadMore={loadMore}
+              hasMore={hasMore}
+              loading={loading}
             />
           )}
         </>
@@ -346,6 +377,10 @@ function App() {
             onUnlike={handleUnlike}
           />
         </>
+      )}
+
+      {activeTab === 'Add Recipe' && (
+        <AddRecipeForm onSubmit={handleAddRecipe} />
       )}
     </div>
   );
