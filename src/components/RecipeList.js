@@ -7,6 +7,10 @@ function RecipeList({ recipes, likedRecipes, onLike, onUnlike }) {
     setExpandedRecipeId(expandedRecipeId === recipeId ? null : recipeId);
   };
 
+  const getDefaultImage = (title) => {
+    return `https://placehold.co/400x300/f4c27a/4b2e2e?text=${encodeURIComponent(title)}`;
+  };
+
   return (
     <div className="recipes">
       <h2>Recipes</h2>
@@ -16,13 +20,17 @@ function RecipeList({ recipes, likedRecipes, onLike, onUnlike }) {
             <li key={recipe.id} style={{ margin: '20px 0', display: 'flex', gap: '20px' }}>
               {/* Recipe Image */}
               <img
-                src={recipe.image}
+                src={recipe.image || getDefaultImage(recipe.title)}
                 alt={recipe.title}
                 style={{
                   width: '150px',
                   height: '150px',
                   borderRadius: '10px',
                   objectFit: 'cover',
+                }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = getDefaultImage(recipe.title);
                 }}
               />
               {/* Recipe Details */}
@@ -66,11 +74,14 @@ function RecipeList({ recipes, likedRecipes, onLike, onUnlike }) {
                 {/* Steps Display */}
                 {expandedRecipeId === recipe.id && (
                   <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                    {recipe.steps.map((step, index) => (
-                      <li key={index} style={{ marginBottom: '5px' }}>
-                        {index + 1}. {step}
-                      </li>
-                    ))}
+                    {Array.isArray(recipe.steps) 
+                        ? recipe.steps.map((step, index) => (
+                            <li key={index} style={{ marginBottom: '5px' }}>
+                                {index + 1}. {step}
+                            </li>
+                        ))
+                        : <li>{recipe.steps}</li>
+                    }
                   </ul>
                 )}
               </div>

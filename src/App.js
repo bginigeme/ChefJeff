@@ -15,6 +15,10 @@ function App() {
     favoriteCuisines: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleInputChange = (field, value) => {
     setUserPreferences(prev => ({
@@ -37,88 +41,10 @@ function App() {
     'Dinner',
   ];
 
-  const recipes = [
-    {
-      id: 1,
-      title: 'Pancakes',
-      description: 'Fluffy homemade pancakes.',
-      category: 'Breakfast',
-      image: 'https://via.placeholder.com/150?text=Pancakes',
-      steps: [
-        'Mix flour, eggs, milk, and sugar in a bowl.',
-        'Heat a skillet over medium heat and grease it lightly.',
-        'Pour batter and cook until bubbles appear, then flip.',
-      ],
-    },
-    {
-      id: 2,
-      title: 'Omelette',
-      description: 'Quick and easy breakfast omelette.',
-      category: 'Breakfast',
-      image: 'https://via.placeholder.com/150?text=Omelette',
-      steps: [
-        'Beat eggs with salt and pepper.',
-        'Pour eggs into a hot skillet with butter.',
-        'Cook until set, then fold and serve.',
-      ],
-    },
-    {
-      id: 3,
-      title: 'Vegan Salad',
-      description: 'Healthy and delicious.',
-      category: 'Vegan',
-      image: 'https://via.placeholder.com/150?text=Salad',
-      steps: [
-        'Chop lettuce, tomatoes, and cucumbers.',
-        'Mix olive oil, lemon juice, and seasoning.',
-        'Toss vegetables with dressing.',
-      ],
-    },
-    {
-      id: 4,
-      title: 'Vegan Buddha Bowl',
-      description: 'A colorful and nutrient-packed bowl.',
-      category: 'Vegan',
-      image: 'https://via.placeholder.com/150?text=Buddha+Bowl',
-      steps: [
-        'Cook quinoa and let cool.',
-        'Prepare roasted vegetables and fresh greens.',
-        'Assemble the bowl with toppings and dressing.',
-      ],
-    },
-    {
-      id: 5,
-      title: 'Chocolate Cake',
-      description: 'Rich and moist dessert.',
-      category: 'Desserts',
-      image: 'https://via.placeholder.com/150?text=Cake',
-      steps: [
-        'Preheat oven to 350°F (175°C).',
-        'Mix flour, cocoa, sugar, and baking powder in a bowl.',
-        'Add eggs, milk, and butter. Mix until smooth.',
-        'Pour batter into a greased pan and bake for 30 minutes.',
-      ],
-    },
-    {
-      id: 6,
-      title: 'Brownies',
-      description: 'Chewy and chocolatey brownies.',
-      category: 'Desserts',
-      image: 'https://via.placeholder.com/150?text=Brownies',
-      steps: [
-        'Melt chocolate and butter together.',
-        'Mix in sugar, eggs, and flour.',
-        'Pour into a pan and bake at 350°F for 25 minutes.',
-      ],
-    },
-  ];
-  
-  
-
-  const filteredRecipes =
-    selectedCategory === 'All'
-      ? recipes
-      : recipes.filter(recipe => recipe.category === selectedCategory);
+  // Update the filteredRecipes logic
+  const filteredRecipes = selectedCategory === 'All' 
+    ? recipes 
+    : recipes.filter(recipe => recipe.category.toLowerCase() === selectedCategory.toLowerCase());
 
   // Function to handle liking a recipe
   const handleLike = recipe => {
@@ -184,6 +110,62 @@ function App() {
     }
   }, [activeTab]);
 
+  // Update the useEffect to fetch recipes when category changes
+  useEffect(() => {
+    const tags = selectedCategory === 'All' ? '' : selectedCategory;
+    fetchRecipes(tags);
+  }, [selectedCategory]);
+
+  const fetchRecipes = async (tags = '') => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Map our categories to Spoonacular's supported types
+      const categoryMapping = {
+        'Breakfast': 'breakfast',
+        'Lunch': 'lunch',
+        'Dinner': 'dinner',
+        'Southern': 'southern',
+        'Asian': 'asian',
+        'Tex-Mex': 'mexican',
+        'Vegan': 'vegan',
+        'Desserts': 'dessert',
+        'Snacks': 'snack',
+        'Nigerian': 'african'
+      };
+
+      const mappedTag = categoryMapping[tags] || tags;
+      console.log('Fetching recipes for tag:', mappedTag);
+      
+      const response = await fetch(`http://localhost:5000/api/recipes?tags=${mappedTag}`);
+      if (!response.ok) throw new Error('Failed to fetch recipes');
+      const data = await response.json();
+      console.log('Received recipes:', data);
+      setRecipes(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching recipes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (query) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`http://localhost:5000/api/recipes/search?query=${query}`);
+      if (!response.ok) throw new Error('Failed to search recipes');
+      const data = await response.json();
+      setRecipes(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error searching recipes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <header className="app-header">
@@ -217,17 +199,51 @@ function App() {
       {activeTab === 'Home' && (
         <>
           <h1>Explore Recipes</h1>
+          <div style={{ margin: '20px 0' }}>
+            <input
+              type="text"
+              placeholder="Search recipes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: '8px',
+                width: '200px',
+                marginRight: '10px',
+                borderRadius: '5px',
+                border: '1px solid #d9a760'
+              }}
+            />
+            <button
+              onClick={() => handleSearch(searchQuery)}
+              style={{
+                padding: '8px 15px',
+                backgroundColor: '#d74e09',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Search
+            </button>
+          </div>
           <CategoryList
             categories={categories}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
-          <RecipeList
-            recipes={filteredRecipes}
-            likedRecipes={likedRecipes}
-            onLike={handleLike}
-            onUnlike={handleUnlike}
-          />
+          {loading ? (
+            <div>Loading recipes...</div>
+          ) : error ? (
+            <div>Error: {error}</div>
+          ) : (
+            <RecipeList
+              recipes={recipes}
+              likedRecipes={likedRecipes}
+              onLike={handleLike}
+              onUnlike={handleUnlike}
+            />
+          )}
         </>
       )}
 {activeTab === 'Jeff' && (
