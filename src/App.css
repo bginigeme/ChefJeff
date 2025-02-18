@@ -1,0 +1,70 @@
+/* Center the header content */
+.app-header {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically if needed */
+    padding: 20px;
+    background-color: #f4c27a; /* Optional: Add a background color */
+  }
+  
+  /* Logo styling */
+  .logo {
+    width: 100px; /* Set desired width */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: contain; /* Ensure it fits within its box */
+  }
+  
+
+.navbar {
+    display: flex;
+    justify-content: center;
+    background-color: #f4c27a; /* Golden background for luxury */
+    padding: 10px 0;
+    margin-bottom: 20px;
+  }
+  
+  .navbar button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+    color: #4b2e2e; /* Dark brown text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .navbar button:hover {
+    background-color: #7b3f00; /* Rich brown */
+    color: #f4e3c1; /* Cream text */
+    border-radius: 5px;
+  }
+  
+  .navbar button.active {
+    font-weight: bold;
+    background-color: #d74e09; /* Deep red for active tab */
+    color: #fff; /* White text */
+    border-radius: 5px;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 10px 15px;
+    margin: 5px;
+    border: 1px solid #d9a760;
+    background-color: #ffe8c9;
+    color: #4b2e2e;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #f4c27a;
+  }
+  
+  button:active {
+    background-color: #d74e09;
+    color: #fff;
+  }
+  
