@@ -36,7 +36,7 @@ function App() {
     'Breakfast',
     'Lunch',
     'Southern',
-    'Nigerian',
+    'African',
     'Asian',
     'Tex-Mex',
     'Vegan',
@@ -137,7 +137,7 @@ function App() {
         'Vegan': 'vegan',
         'Desserts': 'dessert',
         'Snacks': 'snack',
-        'Nigerian': 'african'
+        'African': 'african'
       };
 
       const mappedTag = categoryMapping[tags] || tags;
